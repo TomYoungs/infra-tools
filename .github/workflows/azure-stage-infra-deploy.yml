@@ -1,0 +1,41 @@
+name: stage deploy azure
+
+on:
+  workflow_dispatch:
+  
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+    - uses: Azure/login@v1
+      with: 
+        creds: ${{ secrets.AZURE_CREDENTIALS  }}
+    - name: Check out repository
+      uses: actions/checkout@v3
+    - name: tf install
+      uses: hashicorp/setup-terraform@v2
+    
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-2
+          
+    - name: tf init
+      run: terraform init -backend-config=backend.hcl
+      working-directory: azure/stage/services
+      env:
+        ARM_CLIENT_ID: ${{secrets.AZURE_CLIENT_ID }}
+        ARM_CLIENT_SECRET: ${{secrets.AZURE_CLIENT_SECRET}}
+        ARM_SUBSCRIPTION_ID: ${{secrets.AZURE_SUBSCRIPTION_ID}}
+        ARM_TENANT_ID: ${{secrets.AZURE_TENANT_ID}}
+    - name: tf apply
+      run: terraform apply -auto-approve
+      working-directory: azure/stage/services
+      env:
+        ARM_CLIENT_ID: ${{secrets.AZURE_CLIENT_ID }}
+        ARM_CLIENT_SECRET: ${{secrets.AZURE_CLIENT_SECRET}}
+        ARM_SUBSCRIPTION_ID: ${{secrets.AZURE_SUBSCRIPTION_ID}}
+        ARM_TENANT_ID: ${{secrets.AZURE_TENANT_ID}}
